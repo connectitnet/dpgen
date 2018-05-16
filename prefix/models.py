@@ -4,7 +4,7 @@ from django.db import models
 # Create your models here.
 from django.db.models import PROTECT, CASCADE
 
-from dpgen.utils import get_local_prefixes, get_npa_data
+from dpgen.utils import get_local_prefixes, get_npa_data, get_ranges_from_iterable
 
 
 class NPANXX(models.Model):
@@ -30,6 +30,29 @@ class NPANXX(models.Model):
             )
             NPANXXIsLocal.objects.get_or_create(npanxx_src=self, npanxx_dest=npanxx)
             NPANXXIsLocal.objects.get_or_create(npanxx_src=npanxx, npanxx_dest=self)
+
+    @property
+    def local_to_as_list(self):
+        return [npanxx.npa*1000+npanxx.nxx for npanxx in self.local_to.order_by('npa', 'nxx')]
+
+    @property
+    def local_to_npa_list(self):
+        return [npanxx['npa'] for npanxx in self.local_to.order_by('npa').values('npa').distinct()]
+
+    def get_local_to_as_list_from_npa(self, npa):
+        return [npanxx.nxx for npanxx in self.local_to.filter(npa=npa).order_by('nxx')]
+
+    @property
+    def local_to_prefixes_as_dict(self):
+        return_data = dict()
+        npa_list = self.local_to_npa_list
+        for npa in npa_list:
+            prefixes = self.get_local_to_as_list_from_npa(npa)
+            return_data[npa] = get_ranges_from_iterable(prefixes)
+        return return_data
+
+
+
 
     def save(self, *args, **kwargs):
         npa = get_npa_data(npa=self.npa)
