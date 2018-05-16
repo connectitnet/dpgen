@@ -1,9 +1,8 @@
 from django.db import models
+from django.db.models import PROTECT
 
-# Create your models here.
-class Ratecenter(models.Model):
+class Exchange(models.Model):
     name = models.CharField(max_length=50, db_index=True)
-    region = models.ForeignKey('Region')
+    number = models.PositiveIntegerField()
+    region = models.ForeignKey('prefix.Region', on_delete=PROTECT)
 
-class Region(models.Model):
-    name = models.CharField(max_length=50)
